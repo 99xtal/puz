@@ -1,95 +1,41 @@
-type PuzMetadata = {
-    checksum: number;
-    cibChecksum: number;
-    version: string;
-    width: number;
-    height: number;
-    numClues: number;
-    isScrambled: boolean;
-    gridSolutionOffset: number;
-    gridStateOffset: number;
-    stringsOffset: number;
-};
+import type { FileComponent, Puz, PuzMetadata } from "./types.js";
 
-type FileComponent = {
-    offset: number;
-    length: number;
-    type: 'short' | 'string' | 'byte';
-}
+export function parse(buffer: Buffer): Puz {
+    // parse header
+    const puzzleMetadata = parseHeader(buffer);
+    const { 
+        numClues,
+        width,
+        height,
+        isScrambled,
+        gridSolutionOffset,
+        gridStateOffset,
+        stringsOffset,
+     } = puzzleMetadata;
 
-const puzHeaderSpec: Record<string, FileComponent> = {
-    checksum: {
-        offset: 0x00,
-        length: 2,
-        type: 'short'
-    },
-    fileMagic: {
-        offset: 0x02,
-        length: 0xC,
-        type: 'string'
-    },
-    cibChecksum: {
-        offset: 0x0E,
-        length: 0x02,
-        type: 'short'
-    },
-    version: {
-        offset: 0x18,
-        length: 0x04,
-        type: 'string',
-    },
-    scrambledChecksum: {
-        offset: 0x1E,
-        length: 0x02,
-        type: 'short',
-    },
-    width: {
-        offset: 0x2C,
-        length: 0x01,
-        type: 'byte',
-    },
-    height: {
-        offset: 0x2D,
-        length: 0x01,
-        type: 'byte',
-    },
-    numClues: {
-        offset: 0x2E,
-        length: 0x2, 
-        type: 'short',
-    },
-    scrambledTag: {
-        offset: 0x32,
-        length: 0x2, 
-        type: 'short',
+    // validate checksums
+
+    // parse grid, solution, clues, and rest of data
+    const solution = parseGrid(buffer, gridSolutionOffset, width, height);
+    const state = parseGrid(buffer, gridStateOffset, width, height);
+    const puzzleText = parsePuzzleText(buffer, stringsOffset, numClues);
+
+    const puz: Puz = {
+        width,
+        height,
+        isScrambled,
+        numClues,
+        solution,
+        state,
+        ...puzzleText
     }
-}
 
-function parseComponent(buf: Buffer, component: FileComponent) {
-    const { offset, length, type } = component;
-    const utf8Decoder = new TextDecoder();
-
-    const subBuffer = buf.subarray(offset, offset + length);
-
-    switch (type) {
-        case 'string':
-            let end = length;
-
-            const stringEnd = subBuffer.findIndex((val) => val === 0);
-            if (stringEnd !== -1) {
-                end = stringEnd;
-            }
-            return utf8Decoder.decode(buf.subarray(offset, offset + end))
-        case 'short':
-            return subBuffer.readUInt16LE();
-        case 'byte':
-            return buf.at(offset);
-    }
+    return puz
 }
 
 function parseHeader(buffer: Buffer): PuzMetadata {
     const headerData: Record<string, string | number | undefined> = {};
-    for (const [name, component] of Object.entries(puzHeaderSpec)) {
+    for (const [name, component] of Object.entries(PUZ_HEADER_SPEC)) {
         headerData[name] = parseComponent(buffer, component);
     }
 
@@ -171,49 +117,72 @@ function parseGrid(buffer: Buffer, startPtr: number, width: number, height: numb
     return grid;
 }
 
-export function parse(buffer: Buffer): Puz {
-    // parse header
-    const puzzleMetadata = parseHeader(buffer);
-    const { 
-        numClues,
-        width,
-        height,
-        isScrambled,
-        gridSolutionOffset,
-        gridStateOffset,
-        stringsOffset,
-     } = puzzleMetadata;
+function parseComponent(buf: Buffer, component: FileComponent) {
+    const { offset, length, type } = component;
+    const utf8Decoder = new TextDecoder();
 
-    // validate checksums
+    const subBuffer = buf.subarray(offset, offset + length);
 
-    // parse grid, solution, clues, and rest of data
-    const solution = parseGrid(buffer, gridSolutionOffset, width, height);
-    const state = parseGrid(buffer, gridStateOffset, width, height);
-    const puzzleText = parsePuzzleText(buffer, stringsOffset, numClues);
+    switch (type) {
+        case 'string':
+            let end = length;
 
-    const puz: Puz = {
-        width,
-        height,
-        isScrambled,
-        numClues,
-        solution,
-        state,
-        ...puzzleText
+            const stringEnd = subBuffer.findIndex((val) => val === 0x00);
+            if (stringEnd !== -1) {
+                end = stringEnd;
+            }
+            return utf8Decoder.decode(buf.subarray(offset, offset + end))
+        case 'short':
+            return subBuffer.readUInt16LE();
+        case 'byte':
+            return buf.at(offset);
     }
-
-    return puz
 }
 
-export type Puz = {
-    width: number,
-    height: number,
-    isScrambled: boolean,
-    numClues: number,
-    solution: (string | null)[],
-    state: (string | null)[],
-    clues: string[],
-    title?: string,
-    author?: string,
-    copyright?: string,
-    notes?: string,
+const PUZ_HEADER_SPEC: Record<string, FileComponent> = {
+    checksum: {
+        offset: 0x00,
+        length: 2,
+        type: 'short'
+    },
+    fileMagic: {
+        offset: 0x02,
+        length: 0xC,
+        type: 'string'
+    },
+    cibChecksum: {
+        offset: 0x0E,
+        length: 0x02,
+        type: 'short'
+    },
+    version: {
+        offset: 0x18,
+        length: 0x04,
+        type: 'string',
+    },
+    scrambledChecksum: {
+        offset: 0x1E,
+        length: 0x02,
+        type: 'short',
+    },
+    width: {
+        offset: 0x2C,
+        length: 0x01,
+        type: 'byte',
+    },
+    height: {
+        offset: 0x2D,
+        length: 0x01,
+        type: 'byte',
+    },
+    numClues: {
+        offset: 0x2E,
+        length: 0x2, 
+        type: 'short',
+    },
+    scrambledTag: {
+        offset: 0x32,
+        length: 0x2, 
+        type: 'short',
+    }
 }
