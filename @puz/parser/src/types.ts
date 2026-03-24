@@ -5,6 +5,7 @@ export type Puz = {
     numClues: number,
     solution: (string | null)[],
     state: (string | null)[],
+    clueNumbers: (number | null)[],
     clues: string[],
     title?: string,
     author?: string,
