@@ -1,6 +1,6 @@
 import type { FileComponent, Puz, PuzMetadata } from "./types.js";
 
-export function parse(buffer: Buffer): Puz {
+export function parse(buffer: Uint8Array): Puz {
     // parse header
     const puzzleMetadata = parseHeader(buffer);
     const { 
@@ -33,7 +33,7 @@ export function parse(buffer: Buffer): Puz {
     return puz
 }
 
-function parseHeader(buffer: Buffer): PuzMetadata {
+function parseHeader(buffer: Uint8Array): PuzMetadata {
     const headerData: Record<string, string | number | undefined> = {};
     for (const [name, component] of Object.entries(PUZ_HEADER_SPEC)) {
         headerData[name] = parseComponent(buffer, component);
@@ -74,7 +74,7 @@ function parseHeader(buffer: Buffer): PuzMetadata {
     }
 }
 
-function parsePuzzleText(buffer: Buffer, startPtr: number, numClues: number) {
+function parsePuzzleText(buffer: Uint8Array, startPtr: number, numClues: number) {
     const utf8Decoder = new TextDecoder();
     let cursor = startPtr;
 
@@ -97,12 +97,12 @@ function parsePuzzleText(buffer: Buffer, startPtr: number, numClues: number) {
         title: strings[0],
         author: strings[1],
         copyright: strings[2],
-        notes: strings[-1],
+        notes: strings[strings.length - 1],
         clues: strings.slice(3, 3 + numClues)!,
     }
 }
 
-function parseGrid(buffer: Buffer, startPtr: number, width: number, height: number) {
+function parseGrid(buffer: Uint8Array, startPtr: number, width: number, height: number) {
     const utf8Decoder = new TextDecoder();
     const grid: (string | null)[] = [];
     
@@ -117,7 +117,7 @@ function parseGrid(buffer: Buffer, startPtr: number, width: number, height: numb
     return grid;
 }
 
-function parseComponent(buf: Buffer, component: FileComponent) {
+function parseComponent(buf: Uint8Array, component: FileComponent) {
     const { offset, length, type } = component;
     const utf8Decoder = new TextDecoder();
 
@@ -133,10 +133,14 @@ function parseComponent(buf: Buffer, component: FileComponent) {
             }
             return utf8Decoder.decode(buf.subarray(offset, offset + end))
         case 'short':
-            return subBuffer.readUInt16LE();
+            return readUInt16LE(buf, offset);
         case 'byte':
-            return buf.at(offset);
+            return buf[offset];
     }
+}
+
+function readUInt16LE(buf: Uint8Array, offset: number) {
+    return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getUint16(offset, true);
 }
 
 const PUZ_HEADER_SPEC: Record<string, FileComponent> = {
