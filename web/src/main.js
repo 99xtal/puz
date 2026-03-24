@@ -5,6 +5,8 @@ const title = document.getElementById('title');
 const author = document.getElementById('author');
 const copyright = document.getElementById('copyright');
 const output = document.getElementById('output');
+const acrossList = document.getElementById('across-list');
+const downList = document.getElementById('down-list');
 const svg = document.getElementById('board');
 
 const NS = "http://www.w3.org/2000/svg";
@@ -17,6 +19,10 @@ const state = {
   width: 0,
   height: 0,
   cells: [],
+  clues: {
+    across: {},
+    down: {},
+  },
 };
 
 function dispatch(action) {
@@ -29,6 +35,8 @@ function dispatch(action) {
         height,
         width,
         solution,
+        clueNumbers,
+        clues,
       } = action.payload;
 
       state.title = title;
@@ -36,6 +44,7 @@ function dispatch(action) {
       state.copyright = copyright;
       state.height = height;
       state.width = width;
+      state.clues = clues;
 
       const cells = [];
       for (let i = 0; i < width * height; i++) {
@@ -48,6 +57,7 @@ function dispatch(action) {
           cells.push({
             block: false,
             solution: soln,
+            number: clueNumbers[i],
           })
         }
       }
@@ -74,6 +84,20 @@ function render() {
   author.textContent = state.author;
   copyright.textContent = state.copyright;
 
+  Object.entries(state.clues.across).forEach(([clueNum, clue]) => {
+    const item = document.createElement('li');
+    item.innerText = `${clueNum}. ${clue}`;
+    item.classList.add("clue");
+    acrossList.appendChild(item);
+  })
+
+  Object.entries(state.clues.down).forEach(([clueNum, clue]) => {
+    const item = document.createElement('li');
+    item.innerText = `${clueNum}. ${clue}`;
+    item.classList.add("clue");
+    downList.appendChild(item);
+  })
+
   state.cells.forEach((cell, index) => {
     const row = Math.floor(index / state.height)
     const col = index % state.width;
@@ -97,6 +121,16 @@ function render() {
     group.appendChild(rect);
 
     if (!cell.block) {
+      if (cell.number) {
+        const number = createSvgEl("text", {
+          x: x + 4,
+          y: y + 4,
+          class: "number",
+        });
+        number.textContent = cell.number;
+        group.appendChild(number);
+      }
+
       const letter = createSvgEl("text", {
         x: x + cellWidth / 2,
         y: y + cellHeight / 2,

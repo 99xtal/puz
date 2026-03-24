@@ -1,9 +1,7 @@
 svg {
     width: 600px;
     height: 600px;
-    border: 1px solid #ccc;
-    display: block;
-    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .cell rect {
@@ -16,8 +14,26 @@ svg {
     fill: black;
 }
 
+.number {
+    font-size: 12px;
+    dominant-baseline: hanging;
+}
+
 .letter {
     font-size: 24px;
     text-anchor: middle;
     dominant-baseline: middle;
+}
+
+.sidebar {
+    flex: 1;
+}
+
+.flex {
+    display: flex;
+}
+
+.clue {
+    list-style: none;
+    padding-left: 0;
 }
