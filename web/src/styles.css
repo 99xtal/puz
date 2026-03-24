@@ -1,0 +1,23 @@
+svg {
+    width: 600px;
+    height: 600px;
+    border: 1px solid #ccc;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.cell rect {
+    fill: white;
+    stroke: #666;
+    stroke-width: 1;
+}
+
+.cell.block rect {
+    fill: black;
+}
+
+.letter {
+    font-size: 24px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
