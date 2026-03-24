@@ -18,8 +18,10 @@ export function parse(buffer: Uint8Array): Puz {
     // parse grid, solution, clues, and rest of data
     const solution = parseGrid(buffer, gridSolutionOffset, width, height);
     const state = parseGrid(buffer, gridStateOffset, width, height);
+    const { clues: clueText, ...puzzleText } = parsePuzzleText(buffer, stringsOffset, numClues);
+
     const clueNumbers = getClueNumbers(solution, width, height);
-    const puzzleText = parsePuzzleText(buffer, stringsOffset, numClues);
+    const clues = getClues(clueText, clueNumbers, solution, width, height);
 
     const puz: Puz = {
         width,
@@ -29,63 +31,36 @@ export function parse(buffer: Uint8Array): Puz {
         solution,
         state,
         clueNumbers,
+        clues,
         ...puzzleText
     }
 
     return puz
 }
 
-function getClueNumbers(grid: (string | null)[], width: number, height: number) {
-    const clueNumbers: (number | null)[] = [];
+function getClues(clueText: string[], clueNumbers: (number | null)[], solution: (string | null)[], width: number, height: number) {
+    const clues: Record<'across' | 'down', Record<string, string>> = {
+        across: {},
+        down: {},
+    };
 
-    let clueNumber = 1;
-    for (let i = 0; i < width * height; i++) {
-        const cell = grid[i];
-        if (!cell) {
-            clueNumbers.push(null);
-            continue;
-        } else if (needsAcrossClue(grid, i, width, height) || needsDownClue(grid, i, width, height)) {
-            clueNumbers.push(clueNumber);
-            clueNumber++;
-        } else {
-            clueNumbers.push(null)
+    let matchedClueIndex = 0;
+    for (let cluePos = 0; cluePos < clueNumbers.length; cluePos++) {
+        const clueNum = clueNumbers[cluePos];
+        if (clueNum) {
+            if (needsAcrossClue(solution, cluePos, width, height)) {
+                clues.across[clueNum] = clueText[matchedClueIndex]!;
+                matchedClueIndex++;
+            }
+
+            if (needsDownClue(solution, cluePos, width, height)) {
+                clues.down[clueNum] = clueText[matchedClueIndex]!;
+                matchedClueIndex++
+            }
         }
     }
 
-    return clueNumbers;
-}
-
-function needsAcrossClue(solutionGrid: (string | null)[], index: number, width: number, height: number) {
-    if (!solutionGrid[index]) {
-        return false;
-    }
-
-    const col = index % width;
-    const isStart = col === 0 || !solutionGrid[index - 1];
-    if (isStart) {
-        const hasNext = col < width - 1 && solutionGrid[index + 1]
-        if (hasNext) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function needsDownClue(solutionGrid: (string | null)[], index: number, width: number, height: number) {
-    if (!solutionGrid[index]) {
-        return false;
-    }
-
-    const row = Math.floor(index / width);
-
-    const isStart =
-        row === 0 || !solutionGrid[index - width];
-
-    const hasNext =
-        row < height - 1 && solutionGrid[index + width];
-
-    return isStart && hasNext;
+    return clues;
 }
 
 function parseHeader(buffer: Uint8Array): PuzMetadata {
@@ -192,6 +167,59 @@ function parseComponent(buf: Uint8Array, component: FileComponent) {
         case 'byte':
             return buf[offset];
     }
+}
+
+function getClueNumbers(grid: (string | null)[], width: number, height: number) {
+    const clueNumbers: (number | null)[] = [];
+
+    let clueNumber = 1;
+    for (let i = 0; i < width * height; i++) {
+        const cell = grid[i];
+        if (!cell) {
+            clueNumbers.push(null);
+            continue;
+        } else if (needsAcrossClue(grid, i, width, height) || needsDownClue(grid, i, width, height)) {
+            clueNumbers.push(clueNumber);
+            clueNumber++;
+        } else {
+            clueNumbers.push(null)
+        }
+    }
+
+    return clueNumbers;
+}
+
+function needsAcrossClue(solutionGrid: (string | null)[], index: number, width: number, height: number) {
+    if (!solutionGrid[index]) {
+        return false;
+    }
+
+    const col = index % width;
+    const isStart = col === 0 || !solutionGrid[index - 1];
+    if (isStart) {
+        const hasNext = col < width - 1 && solutionGrid[index + 1]
+        if (hasNext) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function needsDownClue(solutionGrid: (string | null)[], index: number, width: number, height: number) {
+    if (!solutionGrid[index]) {
+        return false;
+    }
+
+    const row = Math.floor(index / width);
+
+    const isStart =
+        row === 0 || !solutionGrid[index - width];
+
+    const hasNext =
+        row < height - 1 && solutionGrid[index + width];
+
+    return isStart && hasNext;
 }
 
 function readUInt16LE(buf: Uint8Array, offset: number) {

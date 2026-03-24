@@ -6,7 +6,10 @@ export type Puz = {
     solution: (string | null)[],
     state: (string | null)[],
     clueNumbers: (number | null)[],
-    clues: string[],
+    clues: {
+        across: Record<number, string>
+        down: Record<number, string>
+    }
     title?: string,
     author?: string,
     copyright?: string,
