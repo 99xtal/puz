@@ -4,13 +4,13 @@ svg {
     flex-shrink: 0;
 }
 
-.cell rect {
+.xwd_cell rect {
     fill: white;
     stroke: #666;
     stroke-width: 1;
 }
 
-.cell.block rect {
+.xwd_cell--block rect {
     fill: black;
 }
 
