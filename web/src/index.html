@@ -9,18 +9,17 @@
 <body>
     <input type="file" id="fileInput" />
     <br />
-    <section>
-        <h2 id="title"></h2>
-        <p id="author"></p>
-        <p id="copyright"></p>
-    </section>
-    <div class="flex">
-        <svg id="board" viewBox="0 0 800 800"></svg>
-        <div class="sidebar">
-            <h3 id="across-title">Across</h3>
-            <ul id="across-list" aria-labelledby="across-title"></ul>
-            <h3 id="down-title">Down</h3>
-            <ul id="down-list" aria-labelledby="down-title"></ul>
+    <div class="flex flex-col justify-center">
+        <section class="flex flex-col justify-center">
+            <h2 id="title"></h2>
+            <p id="author"></p>
+            <p id="copyright"></p>
+        </section>
+        <div class="flex justify-center">
+           <svg id="board" viewBox="0 0 800 800"></svg>
+        </div>
+        <div class="flex justify-center">
+            <h3 id="cluebox"></h3>
         </div>
     </div>
     <script type="module" src="main.js"></script>

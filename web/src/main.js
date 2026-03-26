@@ -5,9 +5,8 @@ const title = document.getElementById('title');
 const author = document.getElementById('author');
 const copyright = document.getElementById('copyright');
 const output = document.getElementById('output');
-const acrossList = document.getElementById('across-list');
-const downList = document.getElementById('down-list');
 const svg = document.getElementById('board');
+const cluebox = document.getElementById('cluebox');
 
 const NS = "http://www.w3.org/2000/svg";
 const VIEWBOX_SIZE = 800;
@@ -77,6 +76,16 @@ function createSvgEl(name, attrs = {}) {
   return el;
 }
 
+class Crossword {
+  constructor() {
+
+  }
+
+  render() {
+    
+  }
+}
+
 function render() {
   svg.innerHTML = "";
 
@@ -84,19 +93,7 @@ function render() {
   author.textContent = state.author;
   copyright.textContent = state.copyright;
 
-  Object.entries(state.clues.across).forEach(([clueNum, clue]) => {
-    const item = document.createElement('li');
-    item.innerText = `${clueNum}. ${clue}`;
-    item.classList.add("clue");
-    acrossList.appendChild(item);
-  })
-
-  Object.entries(state.clues.down).forEach(([clueNum, clue]) => {
-    const item = document.createElement('li');
-    item.innerText = `${clueNum}. ${clue}`;
-    item.classList.add("clue");
-    downList.appendChild(item);
-  })
+  cluebox.textContent = `1. ${state.clues.across['1']}`;
 
   state.cells.forEach((cell, index) => {
     const row = Math.floor(index / state.height)

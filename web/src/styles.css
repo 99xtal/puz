@@ -33,7 +33,14 @@ svg {
     display: flex;
 }
 
-.clue {
-    list-style: none;
-    padding-left: 0;
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.justify-center {
+    justify-content: center;
 }
